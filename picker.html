@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="initial-scale=1.0">
+<title>Picker</title>
+<style>
+body {
+    background:#483D8B;
+    color:#F0F8FF;
+    font-family:verdana, sans-serif;
+    font-size:10pt;
+    margin:0;
+    padding:10px;
+}
+
+a:link, a:visited {
+    color:#008;
+    font-weight:bold;
+    text-decoration:none;
+}
+
+a:active, a:hover {
+    color:#ACF;
+}
+
+.info {
+    font-weight:bold;
+}
+
+button {
+    font-family:inherit;
+    cursor:pointer;
+    border:0;
+    border-radius:3px;
+    padding:0.3em 0.5em;
+    background:#CCC;
+    color:#000;
+}
+
+button:hover {
+    background:#DDD;
+}
+
+button.disabled {
+    background:#DDD;
+    color:#888;
+    cursor:not-allowed;
+}
+
+button.disabled:hover {
+    background:#DDD;
+}
+
+#container {
+    position:relative;
+    margin-left:-10px;
+    margin-right:-10px;
+    padding:10px;
+    overflow:hidden;
+}
+
+.tabs {
+    margin:20px 0;
+    padding:0 10px;
+    list-style-type:none;
+    border-bottom:1px solid #AAA;
+}
+
+.tabs li {
+    margin:0 -1px -1px 0;
+    padding:0;
+    display:inline-block;
+    vertical-align:bottom;
+    border:1px solid #AAA;
+    background:#EEE;
+}
+
+.tabs li:first-child {
+    border-top-left-radius:5px;
+}
+
+.tabs li:last-child {
+    border-top-right-radius:5px;
+}
+
+.tabs li.active {
+    border-top-left-radius:5px;
+    border-top-right-radius:5px;
+    background:#FFF;
+    border-bottom-color:#FFF;
+}
+
+.tabs a {
+    display:block;
+    padding:5px 10px;
+    font-size:1.1em;
+    color:#000;
+}
+
+.tabs li.active a {
+    font-size:1.2em;
+    padding:10px 20px 5px;
+}
+
+@media (min-width:360px) {
+    .tabs a {
+        font-size:1.3em;
+    }
+
+    .tabs li.active a {
+        font-size:1.5em;
+    }
+}
+
+@media (min-width:1024px) {
+    /* Put the found favorites beside the picking div when the window is sufficiently large */
+    #picking {
+        float:left;
+        width:636px;
+    }
+
+    #secondary {
+        margin-left:646px;
+    }
+}
+
+@media (min-width:1300px) {
+    /* Once we get to the point where 636px is less than half of the width of the screen, make the picking div just take up half */
+    #picking {
+        width:50%;
+    }
+
+    #secondary {
+        margin-left:51%;
+    }
+}
+
+#pick {
+    background:#58F;
+    color:#FFF;
+    font-size:larger;
+    font-weight:bold;
+    width:6em;
+    border-radius:5px;
+    margin-right:10px;
+}
+
+#pick.disabled {
+    background:#ACF;
+}
+
+#pick:hover {
+    background:#ACF;
+}
+
+.item-list {
+    padding:0;
+    list-style-type:none;
+    line-height:100px;
+}
+
+.item-list li {
+    margin:0;
+    display:inline-block;
+    height:100px;
+    width:100px;
+    line-height:100px;
+    border:3px solid transparent;
+    text-align:center;
+    position:relative;
+    vertical-align:top;
+    overflow:hidden;
+    border-radius:100%;
+    background:#B1C4FF;
+    color:#000;
+}
+
+.item-list li img {
+    vertical-align:middle;
+    max-height:100%;
+    max-width:100%;
+}
+
+.item-list li span {
+    display:inline-block;
+    vertical-align:middle;
+    line-height:1.2;
+}
+
+@media (max-width:636px) {
+    .item-list {
+        line-height:75px;
+    }
+
+    .item-list li {
+        line-height:75px;
+        height:75px;
+        width:75px;
+    }
+}
+
+@media (max-width:423px) {
+    .item-list {
+        line-height:50px;
+    }
+
+    .item-list li {
+        line-height:50px;
+        height:50px;
+        width:50px;
+    }
+}
+
+#evaluating li {
+    cursor:pointer;
+}
+
+#favorites li {
+    cursor:move;
+}
+
+.item-list li:hover {
+    background:#CDF;
+}
+
+.item-list.sorting li:hover {
+    background:#F7F7F7;
+}
+
+#evaluating li.selected {
+    border:3px solid #7AC;
+}
+
+#evaluating, #buttons {
+    text-align:center;
+    margin:auto;
+}
+
+#evaluating li.notice {
+    width:auto;
+    height:auto;
+    max-width:260px;
+    margin:auto;
+    background:#F7F7F7;
+    border-radius:10px;
+    padding:30px 30px;
+    color:#000;
+    text-align:center;
+    line-height:1.4;
+    cursor:auto;
+    font-size:10pt;
+}
+
+#buttons {
+    margin-top:30px;
+    position:relative;
+    z-index:3;
+}
+
+input.species {
+	width: 15px;
+	height: 15px;
+}
+
+label {
+	font-size: 15px;
+	font-weight: bold;
+}
+
+.help-text {
+	font-size: 15px;
+	font-weight: bold;
+}
+
+.description {
+	margin-top: 0.5em;
+	margin-bottom: 3em;
+	font-size: 15px;
+	line-height: 150%;
+	width: 60%;
+}
+
+</style>
+</head>
+<body>
+<h1>AC Villager Picker</h1>
+
+<h3>Make your perfect village!</h3>
+
+<p class ="description">
+Simply select your favorite villager(s) from each batch and hit the "pick" button.  If you can't decide you can hit pass.
+If you make a mistake, hit undo to undo the last selection you made.  Eventually batches will get smaller and smaller until
+you find your favorite!  After a favorite is found, the list will be repopulated and you can continue until you find your
+second favorite, third, fourth, and so on.  Not all villagers will be added back into the pool when a favorite is found.
+If a villager is "defeated" by another (aka you picked a given villager over another), then they won't rejoin the pool until
+the villager that "defeated" them is added to the favorites list.
+</p>
+
+<div id="container">
+
+<div id="picking">
+<ul id="evaluating" class="item-list">
+</ul>
+
+<p id="buttons"><button id="pick">Pick</button> <button id="pass">Pass</button> <button id="undo">Undo</button> <button id="redo">Redo</button></p>
+</div>
+
+<div id="secondary">
+<ul class="tabs">
+<li><a href="#found-favorites">Found Favorites</a></li><li><a href="#options">Options</a></li>
+</ul>
+
+<div id="found-favorites">
+<ol id="favorites" class="item-list">
+</ol>
+</div>
+
+<div id="options">
+<p>
+<label><input type ="checkbox" name="species" class="species" value="Alligator" checked> Alligator, </label>
+<label><input type ="checkbox" name="species" class="species" value="Anteater" checked> Anteater, </label>
+<label><input type ="checkbox" name="species" class="species" value="Bear" checked> Bear, </label>
+<label><input type ="checkbox" name="species" class="species" value="Bird" checked> Bird, </label>
+<label><input type ="checkbox" name="species" class="species" value="Bull" checked> Bull, </label>
+<label><input type ="checkbox" name="species" class="species" value="Cat" checked> Cat, </label>
+<label><input type ="checkbox" name="species" class="species" value="Chicken" checked> Chicken, </label>
+<label><input type ="checkbox" name="species" class="species" value="Cow" checked> Cow, </label>
+<label><input type ="checkbox" name="species" class="species" value="Cub" checked> Cub, </label>
+<label><input type ="checkbox" name="species" class="species" value="Deer" checked> Deer, </label>
+<label><input type ="checkbox" name="species" class="species" value="Dog" checked> Dog, </label>
+<label><input type ="checkbox" name="species" class="species" value="Duck" checked> Duck, </label>
+<label><input type ="checkbox" name="species" class="species" value="Eagle" checked> Eagle, </label>
+<label><input type ="checkbox" name="species" class="species" value="Elephant" checked> Elephant, </label>
+<label><input type ="checkbox" name="species" class="species" value="Frog" checked> Frog, </label>
+<label><input type ="checkbox" name="species" class="species" value="Goat" checked> Goat, </label>
+<label><input type ="checkbox" name="species" class="species" value="Gorilla" checked> Gorilla, </label>
+<label><input type ="checkbox" name="species" class="species" value="Hamster" checked> Hamster, </label>
+<label><input type ="checkbox" name="species" class="species" value="Hippo" checked> Hippo, </label>
+<label><input type ="checkbox" name="species" class="species" value="Horse" checked> Horse, </label>
+<label><input type ="checkbox" name="species" class="species" value="Kangaroo" checked> Kangaroo, </label>
+<label><input type ="checkbox" name="species" class="species" value="Koala" checked> Koala, </label>
+<label><input type ="checkbox" name="species" class="species" value="Lion" checked> Lion, </label>
+<label><input type ="checkbox" name="species" class="species" value="Monkey" checked> Monkey, </label>
+<label><input type ="checkbox" name="species" class="species" value="Mouse" checked> Mouse, </label>
+<label><input type ="checkbox" name="species" class="species" value="Octopus" checked> Octopus, </label>
+<label><input type ="checkbox" name="species" class="species" value="Ostrich" checked> Ostrich, </label>
+<label><input type ="checkbox" name="species" class="species" value="Penguin" checked> Penguin, </label>
+<label><input type ="checkbox" name="species" class="species" value="Pig" checked> Pig, </label>
+<label><input type ="checkbox" name="species" class="species" value="Rabbit" checked> Rabbit, </label>
+<label><input type ="checkbox" name="species" class="species" value="Rhino" checked> Rhino, </label>
+<label><input type ="checkbox" name="species" class="species" value="Sheep" checked> Sheep, </label>
+<label><input type ="checkbox" name="species" class="species" value="Squirrel" checked> Squirrel, </label>
+<label><input type ="checkbox" name="species" class="species" value="Tiger" checked> Tiger, </label>
+<label><input type ="checkbox" name="species" class="species" value="Wolf" checked> Wolf</label>
+</p>
+<p><span class="help-text">Only animals of the checked species will appear in the list.</span></p>
+<p><label>AC:NH only? <input type ="checkbox" id="acnh"></label></p>
+<p><span class="help-text">If checked, only villagers found in the Animal Crossing New Horizons datamine will be included.</span></p> 
+<p><button class="reset">Reset Favorites</button></p>
+</div>
+</div>
+</div>
+
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<script src="picker.js"></script>
+<script src="picker-ui.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<script>
+'use strict';
+
+var items = [
+    // Define your items here
+	{id: 'Alfonso', name: 'Alfonso', image: 'Images/Alfonso.png', species: 'Alligator', acnh: true},
+	{id: 'Alli', name: 'Alli', image: 'Images/Alli.png', species: 'Alligator', acnh: true},
+	{id: 'Boots', name: 'Boots', image: 'Images/Boots.png', species: 'Alligator', acnh: true},
+	{id: 'Del', name: 'Del', image: 'Images/Del.png', species: 'Alligator', acnh: true},
+	{id: 'Drago', name: 'Drago', image: 'Images/Drago.png', species: 'Alligator', acnh: true},
+	{id: 'Gayle', name: 'Gayle', image: 'Images/Gayle.png', species: 'Alligator', acnh: true},
+	{id: 'Liz', name: 'Liz', image: 'Images/Liz.png', species: 'Alligator', acnh: false},
+	{id: 'Pironkon', name: 'Pironkon', image: 'Images/Pironkon.png', species: 'Alligator', acnh: false},
+	{id: 'Sly', name: 'Sly', image: 'Images/Sly.png', species: 'Alligator', acnh: true},
+	{id: 'Anabelle', name: 'Anabelle', image: 'Images/Anabelle.png', species: 'Anteater', acnh: true},
+	{id: 'Annalisa', name: 'Annalisa', image: 'Images/Annalisa.png', species: 'Anteater', acnh: true},
+	{id: 'Antonio', name: 'Antonio', image: 'Images/Antonio.png', species: 'Anteater', acnh: true},
+	{id: 'Cyrano', name: 'Cyrano', image: 'Images/Cyrano.png', species: 'Anteater', acnh: true},
+	{id: 'Lulu', name: 'Lulu', image: 'Images/Lulu.png', species: 'Anteater', acnh: false},
+	{id: 'Nosegay', name: 'Nosegay', image: 'Images/Nosegay.png', species: 'Anteater', acnh: false},
+	{id: 'Olaf', name: 'Olaf', image: 'Images/Olaf.png', species: 'Anteater', acnh: true},
+	{id: 'Pango', name: 'Pango', image: 'Images/Pango.png', species: 'Anteater', acnh: true},
+	{id: 'Snooty', name: 'Snooty', image: 'Images/Snooty.png', species: 'Anteater', acnh: true},
+	{id: 'Zoe', name: 'Zoe', image: 'Images/Zoe.png', species: 'Anteater', acnh: false},
+	{id: 'Beardo', name: 'Beardo', image: 'Images/Beardo.png', species: 'Bear', acnh: true},
+	{id: 'Charlise', name: 'Charlise', image: 'Images/Charlise.png', species: 'Bear', acnh: true},
+	{id: 'Chow', name: 'Chow', image: 'Images/Chow.png', species: 'Bear', acnh: true},
+	{id: 'Curt', name: 'Curt', image: 'Images/Curt.png', species: 'Bear', acnh: true},
+	{id: 'Dozer', name: 'Dozer', image: 'Images/Dozer.png', species: 'Bear', acnh: false},
+	{id: 'Grizzly', name: 'Grizzly', image: 'Images/Grizzly.png', species: 'Bear', acnh: true},
+	{id: 'Groucho', name: 'Groucho', image: 'Images/Groucho.png', species: 'Bear', acnh: true},
+	{id: 'Ike', name: 'Ike', image: 'Images/Ike.png', species: 'Bear', acnh: true},
+	{id: 'Klaus', name: 'Klaus', image: 'Images/Klaus.png', species: 'Bear', acnh: true},
+	{id: 'Megan', name: 'Megan', image: 'Images/Megan.png', species: 'Bear', acnh: true},
+	{id: 'Nate', name: 'Nate', image: 'Images/Nate.png', species: 'Bear', acnh: true},
+	{id: 'Paula', name: 'Paula', image: 'Images/Paula.png', species: 'Bear', acnh: true},
+	{id: 'Pinky', name: 'Pinky', image: 'Images/Pinky.png', species: 'Bear', acnh: true},
+	{id: 'Teddy', name: 'Teddy', image: 'Images/Teddy.png', species: 'Bear', acnh: true},
+	{id: 'Tutu', name: 'Tutu', image: 'Images/Tutu.png', species: 'Bear', acnh: true},
+	{id: 'Ursala', name: 'Ursala', image: 'Images/Ursala.png', species: 'Bear', acnh: true},
+	{id: 'Ace', name: 'Ace', image: 'Images/Ace.png', species: 'Bird', acnh: false},
+	{id: 'Admiral', name: 'Admiral', image: 'Images/Admiral.png', species: 'Bird', acnh: true},
+	{id: 'Anchovy', name: 'Anchovy', image: 'Images/Anchovy.png', species: 'Bird', acnh: true},
+	{id: 'Flash', name: 'Flash', image: 'Images/Flash.png', species: 'Bird', acnh: false},
+	{id: 'Jacob', name: 'Jacob', image: 'Images/Jacob.png', species: 'Bird', acnh: true},
+	{id: 'Jacques', name: 'Jacques', image: 'Images/Jacques.png', species: 'Bird', acnh: true},
+	{id: 'Jay', name: 'Jay', image: 'Images/Jay.png', species: 'Bird', acnh: true},
+	{id: 'Jitters', name: 'Jitters', image: 'Images/Jitters.png', species: 'Bird', acnh: true},
+	{id: 'Joe', name: 'Joe', image: 'Images/Joe.png', species: 'Bird', acnh: false},
+	{id: 'Lucha', name: 'Lucha', image: 'Images/Lucha.png', species: 'Bird', acnh: true},
+	{id: 'Madame_Rosa', name: 'Madame_Rosa', image: 'Images/Madame_Rosa.png', species: 'Bird', acnh: false},
+	{id: 'Medli', name: 'Medli', image: 'Images/Medli.png', species: 'Bird', acnh: false},
+	{id: 'Midge', name: 'Midge', image: 'Images/Midge.png', species: 'Bird', acnh: true},
+	{id: 'Otis', name: 'Otis', image: 'Images/Otis.png', species: 'Bird', acnh: false},
+	{id: 'Peck', name: 'Peck', image: 'Images/Peck.png', species: 'Bird', acnh: true},
+	{id: 'Piper', name: 'Piper', image: 'Images/Piper.png', species: 'Bird', acnh: true},
+	{id: 'Robin', name: 'Robin', image: 'Images/Robin.png', species: 'Bird', acnh: true},
+	{id: 'Shoukichi', name: 'Shoukichi', image: 'Images/Shoukichi.png', species: 'Bird', acnh: false},
+	{id: 'Sparro', name: 'Sparro', image: 'Images/Sparro.png', species: 'Bird', acnh: true},
+	{id: 'Twiggy', name: 'Twiggy', image: 'Images/Twiggy.png', species: 'Bird', acnh: true},
+	{id: 'Twirp', name: 'Twirp', image: 'Images/Twirp.png', species: 'Bird', acnh: false},
+	{id: 'Angus', name: 'Angus', image: 'Images/Angus.png', species: 'Bull', acnh: true},
+	{id: 'Chuck', name: 'Chuck', image: 'Images/Chuck.png', species: 'Bull', acnh: false},
+	{id: 'Coach', name: 'Coach', image: 'Images/Coach.png', species: 'Bull', acnh: true},
+	{id: 'Oxford', name: 'Oxford', image: 'Images/Oxford.png', species: 'Bull', acnh: false},
+	{id: 'Rodeo', name: 'Rodeo', image: 'Images/Rodeo.png', species: 'Bull', acnh: true},
+	{id: 'Stu', name: 'Stu', image: 'Images/Stu.png', species: 'Bull', acnh: true},
+	{id: 'TBone', name: 'TBone', image: 'Images/TBone.png', species: 'Bull', acnh: true},
+	{id: 'Verdun', name: 'Verdun', image: 'Images/Verdun.png', species: 'Bull', acnh: false},
+	{id: 'Vic', name: 'Vic', image: 'Images/Vic.png', species: 'Bull', acnh: true},
+	{id: 'Ankha', name: 'Ankha', image: 'Images/Ankha.png', species: 'Cat', acnh: true},
+	{id: 'Bob', name: 'Bob', image: 'Images/Bob.png', species: 'Cat', acnh: true},
+	{id: 'Felicity', name: 'Felicity', image: 'Images/Felicity.png', species: 'Cat', acnh: true},
+	{id: 'Felyne', name: 'Felyne', image: 'Images/Felyne.png', species: 'Cat', acnh: false},
+	{id: 'Kabuki', name: 'Kabuki', image: 'Images/Kabuki.png', species: 'Cat', acnh: true},
+	{id: 'Katt', name: 'Katt', image: 'Images/Katt.png', species: 'Cat', acnh: true},
+	{id: 'Kid_Cat', name: 'Kid_Cat', image: 'Images/Kid_Cat.png', species: 'Cat', acnh: true},
+	{id: 'Kiki', name: 'Kiki', image: 'Images/Kiki.png', species: 'Cat', acnh: true},
+	{id: 'Kitty', name: 'Kitty', image: 'Images/Kitty.png', species: 'Cat', acnh: true},
+	{id: 'Lolly', name: 'Lolly', image: 'Images/Lolly.png', species: 'Cat', acnh: true},
+	{id: 'Meow', name: 'Meow', image: 'Images/Meow.png', species: 'Cat', acnh: false},
+	{id: 'Merry', name: 'Merry', image: 'Images/Merry.png', species: 'Cat', acnh: true},
+	{id: 'Mitzi', name: 'Mitzi', image: 'Images/Mitzi.png', species: 'Cat', acnh: true},
+	{id: 'Moe', name: 'Moe', image: 'Images/Moe.png', species: 'Cat', acnh: true},
+	{id: 'Monique', name: 'Monique', image: 'Images/Monique.png', species: 'Cat', acnh: true},
+	{id: 'Olivia', name: 'Olivia', image: 'Images/Olivia.png', species: 'Cat', acnh: true},
+	{id: 'Pierre', name: 'Pierre', image: 'Images/Pierre.png', species: 'Cat', acnh: false},
+	{id: 'Punchy', name: 'Punchy', image: 'Images/Punchy.png', species: 'Cat', acnh: true},
+	{id: 'Purrl', name: 'Purrl', image: 'Images/Purrl.png', species: 'Cat', acnh: true},
+	{id: 'Raymond', name: 'Raymond', image: 'Images/Raymond.png', species: 'Cat', acnh: true},
+	{id: 'Rosie', name: 'Rosie', image: 'Images/Rosie.png', species: 'Cat', acnh: true},
+	{id: 'Rudy', name: 'Rudy', image: 'Images/Rudy.png', species: 'Cat', acnh: true},
+	{id: 'Stinky', name: 'Stinky', image: 'Images/Stinky.png', species: 'Cat', acnh: true},
+	{id: 'Tabby', name: 'Tabby', image: 'Images/Tabby.png', species: 'Cat', acnh: true},
+	{id: 'Tangy', name: 'Tangy', image: 'Images/Tangy.png', species: 'Cat', acnh: true},
+	{id: 'Tom', name: 'Tom', image: 'Images/Tom.png', species: 'Cat', acnh: true},
+	{id: 'Ava', name: 'Ava', image: 'Images/Ava.png', species: 'Chicken', acnh: true},
+	{id: 'Becky', name: 'Becky', image: 'Images/Becky.png', species: 'Chicken', acnh: true},
+	{id: 'Benedict', name: 'Benedict', image: 'Images/Benedict.png', species: 'Chicken', acnh: true},
+	{id: 'Betty', name: 'Betty', image: 'Images/Betty.png', species: 'Chicken', acnh: false},
+	{id: 'Broffina', name: 'Broffina', image: 'Images/Broffina.png', species: 'Chicken', acnh: true},
+	{id: 'Egbert', name: 'Egbert', image: 'Images/Egbert.png', species: 'Chicken', acnh: true},
+	{id: 'Goose', name: 'Goose', image: 'Images/Goose.png', species: 'Chicken', acnh: true},
+	{id: 'Hank', name: 'Hank', image: 'Images/Hank.png', species: 'Chicken', acnh: false},
+	{id: 'Hector', name: 'Hector', image: 'Images/Hector.png', species: 'Chicken', acnh: false},
+	{id: 'Ken', name: 'Ken', image: 'Images/Ken.png', species: 'Chicken', acnh: true},
+	{id: 'Knox', name: 'Knox', image: 'Images/Knox.png', species: 'Chicken', acnh: true},
+	{id: 'Leigh', name: 'Leigh', image: 'Images/Leigh.png', species: 'Chicken', acnh: false},
+	{id: 'Plucky', name: 'Plucky', image: 'Images/Plucky.png', species: 'Chicken', acnh: true},
+	{id: 'Rhoda', name: 'Rhoda', image: 'Images/Rhoda.png', species: 'Chicken', acnh: false},
+	{id: 'Belle', name: 'Belle', image: 'Images/Belle.png', species: 'Cow', acnh: false},
+	{id: 'Bessie', name: 'Bessie', image: 'Images/Bessie.png', species: 'Cow', acnh: false},
+	{id: 'Carrot', name: 'Carrot', image: 'Images/Carrot.png', species: 'Cow', acnh: false},
+	{id: 'Naomi', name: 'Naomi', image: 'Images/Naomi.png', species: 'Cow', acnh: true},
+	{id: 'Norma', name: 'Norma', image: 'Images/Norma.png', species: 'Cow', acnh: true},
+	{id: 'Patty', name: 'Patty', image: 'Images/Patty.png', species: 'Cow', acnh: true},
+	{id: 'Petunia', name: 'Petunia', image: 'Images/Petunia.png', species: 'Cow', acnh: false},
+	{id: 'Tipper', name: 'Tipper', image: 'Images/Tipper.png', species: 'Cow', acnh: true},
+	{id: 'Aisle', name: 'Aisle', image: 'Images/Aisle.png', species: 'Cub', acnh: false},
+	{id: 'Barold', name: 'Barold', image: 'Images/Barold.png', species: 'Cub', acnh: true},
+	{id: 'Bluebear', name: 'Bluebear', image: 'Images/Bluebear.png', species: 'Cub', acnh: true},
+	{id: 'Cheri', name: 'Cheri', image: 'Images/Cheri.png', species: 'Cub', acnh: true},
+	{id: 'Chester', name: 'Chester', image: 'Images/Chester.png', species: 'Cub', acnh: true},
+	{id: 'Cupcake', name: 'Cupcake', image: 'Images/Cupcake.png', species: 'Cub', acnh: false},
+	{id: 'Judy', name: 'Judy', image: 'Images/Judy.png', species: 'Cub', acnh: true},
+	{id: 'June', name: 'June', image: 'Images/June.png', species: 'Cub', acnh: true},
+	{id: 'Kody', name: 'Kody', image: 'Images/Kody.png', species: 'Cub', acnh: true},
+	{id: 'Maple', name: 'Maple', image: 'Images/Maple.png', species: 'Cub', acnh: true},
+	{id: 'Marty', name: 'Marty', image: 'Images/Marty.png', species: 'Cub', acnh: true},
+	{id: 'Murphy', name: 'Murphy', image: 'Images/Murphy.png', species: 'Cub', acnh: true},
+	{id: 'Olive', name: 'Olive', image: 'Images/Olive.png', species: 'Cub', acnh: true},
+	{id: 'Pekoe', name: 'Pekoe', image: 'Images/Pekoe.png', species: 'Cub', acnh: true},
+	{id: 'Poko', name: 'Poko', image: 'Images/Poko.png', species: 'Cub', acnh: false},
+	{id: 'Poncho', name: 'Poncho', image: 'Images/Poncho.png', species: 'Cub', acnh: true},
+	{id: 'Pudge', name: 'Pudge', image: 'Images/Pudge.png', species: 'Cub', acnh: true},
+	{id: 'Stitches', name: 'Stitches', image: 'Images/Stitches.png', species: 'Cub', acnh: true},
+	{id: 'Tammy', name: 'Tammy', image: 'Images/Tammy.png', species: 'Cub', acnh: true},
+	{id: 'Vladimir', name: 'Vladimir', image: 'Images/Vladimir.png', species: 'Cub', acnh: true},
+	{id: 'Bam', name: 'Bam', image: 'Images/Bam.png', species: 'Deer', acnh: true},
+	{id: 'Beau', name: 'Beau', image: 'Images/Beau.png', species: 'Deer', acnh: true},
+	{id: 'Bruce', name: 'Bruce', image: 'Images/Bruce.png', species: 'Deer', acnh: true},
+	{id: 'Chelsea', name: 'Chelsea', image: 'Images/Chelsea.png', species: 'Deer', acnh: true},
+	{id: 'Deirdre', name: 'Deirdre', image: 'Images/Deirdre.png', species: 'Deer', acnh: true},
+	{id: 'Diana', name: 'Diana', image: 'Images/Diana.png', species: 'Deer', acnh: true},
+	{id: 'Erik', name: 'Erik', image: 'Images/Erik.png', species: 'Deer', acnh: true},
+	{id: 'Fauna', name: 'Fauna', image: 'Images/Fauna.png', species: 'Deer', acnh: true},
+	{id: 'Fuchsia', name: 'Fuchsia', image: 'Images/Fuchsia.png', species: 'Deer', acnh: true},
+	{id: 'Lopez', name: 'Lopez', image: 'Images/Lopez.png', species: 'Deer', acnh: true},
+	{id: 'Zell', name: 'Zell', image: 'Images/Zell.png', species: 'Deer', acnh: true},
+	{id: 'Bea', name: 'Bea', image: 'Images/Bea.png', species: 'Dog', acnh: true},
+	{id: 'Benjamin', name: 'Benjamin', image: 'Images/Benjamin.png', species: 'Dog', acnh: true},
+	{id: 'Biskit', name: 'Biskit', image: 'Images/Biskit.png', species: 'Dog', acnh: true},
+	{id: 'Bones', name: 'Bones', image: 'Images/Bones.png', species: 'Dog', acnh: true},
+	{id: 'Bow', name: 'Bow', image: 'Images/Bow.png', species: 'Dog', acnh: false},
+	{id: 'Butch', name: 'Butch', image: 'Images/Butch.png', species: 'Dog', acnh: true},
+	{id: 'Champagne', name: 'Champagne', image: 'Images/Champagne.png', species: 'Dog', acnh: false},
+	{id: 'Cherry', name: 'Cherry', image: 'Images/Cherry.png', species: 'Dog', acnh: true},
+	{id: 'Cookie', name: 'Cookie', image: 'Images/Cookie.png', species: 'Dog', acnh: true},
+	{id: 'Daisy', name: 'Daisy', image: 'Images/Daisy.png', species: 'Dog', acnh: true},
+	{id: 'Goldie', name: 'Goldie', image: 'Images/Goldie.png', species: 'Dog', acnh: true},
+	{id: 'Lucky', name: 'Lucky', image: 'Images/Lucky.png', species: 'Dog', acnh: true},
+	{id: 'Mac', name: 'Mac', image: 'Images/Mac.png', species: 'Dog', acnh: true},
+	{id: 'Maddie', name: 'Maddie', image: 'Images/Maddie.png', species: 'Dog', acnh: true},
+	{id: 'Marcel', name: 'Marcel', image: 'Images/Marcel.png', species: 'Dog', acnh: true},
+	{id: 'Masa', name: 'Masa', image: 'Images/Masa.png', species: 'Dog', acnh: false},
+	{id: 'Megumi', name: 'Megumi', image: 'Images/Megumi.png', species: 'Dog', acnh: false},
+	{id: 'Portia', name: 'Portia', image: 'Images/Portia.png', species: 'Dog', acnh: true},
+	{id: 'Shep', name: 'Shep', image: 'Images/Shep.png', species: 'Dog', acnh: true},
+	{id: 'Walker', name: 'Walker', image: 'Images/Walker.png', species: 'Dog', acnh: true},
+	{id: 'Bill', name: 'Bill', image: 'Images/Bill.png', species: 'Duck', acnh: true},
+	{id: 'Deena', name: 'Deena', image: 'Images/Deena.png', species: 'Duck', acnh: true},
+	{id: 'Derwin', name: 'Derwin', image: 'Images/Derwin.png', species: 'Duck', acnh: true},
+	{id: 'Drake', name: 'Drake', image: 'Images/Drake.png', species: 'Duck', acnh: true},
+	{id: 'Freckles', name: 'Freckles', image: 'Images/Freckles.png', species: 'Duck', acnh: true},
+	{id: 'Fruity', name: 'Fruity', image: 'Images/Fruity.png', species: 'Duck', acnh: false},
+	{id: 'Gloria', name: 'Gloria', image: 'Images/Gloria.png', species: 'Duck', acnh: true},
+	{id: 'Joey', name: 'Joey', image: 'Images/Joey.png', species: 'Duck', acnh: true},
+	{id: 'Ketchup', name: 'Ketchup', image: 'Images/Ketchup.png', species: 'Duck', acnh: true},
+	{id: 'Maelle', name: 'Maelle', image: 'Images/Maelle.png', species: 'Duck', acnh: true},
+	{id: 'Mallary', name: 'Mallary', image: 'Images/Mallary.png', species: 'Duck', acnh: true},
+	{id: 'Miranda', name: 'Miranda', image: 'Images/Miranda.png', species: 'Duck', acnh: true},
+	{id: 'Molly', name: 'Molly', image: 'Images/Molly.png', species: 'Duck', acnh: true},
+	{id: 'Pate', name: 'Pate', image: 'Images/Pate.png', species: 'Duck', acnh: true},
+	{id: 'Pompom', name: 'Pompom', image: 'Images/Pompom.png', species: 'Duck', acnh: true},
+	{id: 'Quillson', name: 'Quillson', image: 'Images/Quillson.png', species: 'Duck', acnh: true},
+	{id: 'Scoot', name: 'Scoot', image: 'Images/Scoot.png', species: 'Duck', acnh: true},
+	{id: 'Shinabiru', name: 'Shinabiru', image: 'Images/Shinabiru.png', species: 'Duck', acnh: false},
+	{id: 'Weber', name: 'Weber', image: 'Images/Weber.png', species: 'Duck', acnh: true},
+	{id: 'Amelia', name: 'Amelia', image: 'Images/Amelia.png', species: 'Eagle', acnh: true},
+	{id: 'Apollo', name: 'Apollo', image: 'Images/Apollo.png', species: 'Eagle', acnh: true},
+	{id: 'Avery', name: 'Avery', image: 'Images/Avery.png', species: 'Eagle', acnh: true},
+	{id: 'Buzz', name: 'Buzz', image: 'Images/Buzz.png', species: 'Eagle', acnh: true},
+	{id: 'Celia', name: 'Celia', image: 'Images/Celia.png', species: 'Eagle', acnh: true},
+	{id: 'Frank', name: 'Frank', image: 'Images/Frank.png', species: 'Eagle', acnh: true},
+	{id: 'Keaton', name: 'Keaton', image: 'Images/Keaton.png', species: 'Eagle', acnh: true},
+	{id: 'Pierce', name: 'Pierce', image: 'Images/Pierce.png', species: 'Eagle', acnh: true},
+	{id: 'Quetzal', name: 'Quetzal', image: 'Images/Quetzal.png', species: 'Eagle', acnh: false},
+	{id: 'Sterling', name: 'Sterling', image: 'Images/Sterling.png', species: 'Eagle', acnh: true},
+	{id: 'Axel', name: 'Axel', image: 'Images/Axel.png', species: 'Elephant', acnh: true},
+	{id: 'Big_Top', name: 'Big_Top', image: 'Images/Big_Top.png', species: 'Elephant', acnh: true},
+	{id: 'Chai', name: 'Chai', image: 'Images/Chai.png', species: 'Elephant', acnh: true},
+	{id: 'Cyd', name: 'Cyd', image: 'Images/Cyd.png', species: 'Elephant', acnh: true},
+	{id: 'Dizzy', name: 'Dizzy', image: 'Images/Dizzy.png', species: 'Elephant', acnh: true},
+	{id: 'Elina', name: 'Elina', image: 'Images/Elina.png', species: 'Elephant', acnh: false},
+	{id: 'Ellie', name: 'Ellie', image: 'Images/Ellie.png', species: 'Elephant', acnh: true},
+	{id: 'Eloise', name: 'Eloise', image: 'Images/Eloise.png', species: 'Elephant', acnh: true},
+	{id: 'Margie', name: 'Margie', image: 'Images/Margie.png', species: 'Elephant', acnh: true},
+	{id: 'Opal', name: 'Opal', image: 'Images/Opal.png', species: 'Elephant', acnh: true},
+	{id: 'Paolo', name: 'Paolo', image: 'Images/Paolo.png', species: 'Elephant', acnh: true},
+	{id: 'Tia', name: 'Tia', image: 'Images/Tia.png', species: 'Elephant', acnh: true},
+	{id: 'Tucker', name: 'Tucker', image: 'Images/Tucker.png', species: 'Elephant', acnh: true},
+	{id: 'Camofrog', name: 'Camofrog', image: 'Images/Camofrog.png', species: 'Frog', acnh: true},
+	{id: 'Cousteau', name: 'Cousteau', image: 'Images/Cousteau.png', species: 'Frog', acnh: true},
+	{id: 'Croque', name: 'Croque', image: 'Images/Croque.png', species: 'Frog', acnh: true},
+	{id: 'Diva', name: 'Diva', image: 'Images/Diva.png', species: 'Frog', acnh: true},
+	{id: 'Drift', name: 'Drift', image: 'Images/Drift.png', species: 'Frog', acnh: true},
+	{id: 'Emerald', name: 'Emerald', image: 'Images/Emerald.png', species: 'Frog', acnh: false},
+	{id: 'Frobert', name: 'Frobert', image: 'Images/Frobert.png', species: 'Frog', acnh: true},
+	{id: 'Gigi', name: 'Gigi', image: 'Images/Gigi.png', species: 'Frog', acnh: true},
+	{id: 'Henry', name: 'Henry', image: 'Images/Henry.png', species: 'Frog', acnh: true},
+	{id: 'Huck', name: 'Huck', image: 'Images/Huck.png', species: 'Frog', acnh: true},
+	{id: 'Jambette', name: 'Jambette', image: 'Images/Jambette.png', species: 'Frog', acnh: true},
+	{id: 'Jeremiah', name: 'Jeremiah', image: 'Images/Jeremiah.png', species: 'Frog', acnh: true},
+	{id: 'Lily', name: 'Lily', image: 'Images/Lily.png', species: 'Frog', acnh: true},
+	{id: 'Prince', name: 'Prince', image: 'Images/Prince.png', species: 'Frog', acnh: true},
+	{id: 'Puddles', name: 'Puddles', image: 'Images/Puddles.png', species: 'Frog', acnh: true},
+	{id: 'Raddle', name: 'Raddle', image: 'Images/Raddle.png', species: 'Frog', acnh: true},
+	{id: 'Ribbot', name: 'Ribbot', image: 'Images/Ribbot.png', species: 'Frog', acnh: true},
+	{id: 'Sunny', name: 'Sunny', image: 'Images/Sunny.png', species: 'Frog', acnh: false},
+	{id: 'Tad', name: 'Tad', image: 'Images/Tad.png', species: 'Frog', acnh: true},
+	{id: 'Wart_Jr', name: 'Wart_Jr', image: 'Images/Wart_Jr.png', species: 'Frog', acnh: true},
+	{id: 'Billy', name: 'Billy', image: 'Images/Billy.png', species: 'Goat', acnh: true},
+	{id: 'Chevre', name: 'Chevre', image: 'Images/Chevre.png', species: 'Goat', acnh: true},
+	{id: 'Gruff', name: 'Gruff', image: 'Images/Gruff.png', species: 'Goat', acnh: true},
+	{id: 'Iggy', name: 'Iggy', image: 'Images/Iggy.png', species: 'Goat', acnh: false},
+	{id: 'Kidd', name: 'Kidd', image: 'Images/Kidd.png', species: 'Goat', acnh: true},
+	{id: 'Nan', name: 'Nan', image: 'Images/Nan.png', species: 'Goat', acnh: true},
+	{id: 'Pashmina', name: 'Pashmina', image: 'Images/Pashmina.png', species: 'Goat', acnh: true},
+	{id: 'Sven', name: 'Sven', image: 'Images/Sven.png', species: 'Goat', acnh: false},
+	{id: 'Velma', name: 'Velma', image: 'Images/Velma.png', species: 'Goat', acnh: true},
+	{id: 'Al', name: 'Al', image: 'Images/Al.png', species: 'Gorilla', acnh: true},
+	{id: 'Boone', name: 'Boone', image: 'Images/Boone.png', species: 'Gorilla', acnh: true},
+	{id: 'Boyd', name: 'Boyd', image: 'Images/Boyd.png', species: 'Gorilla', acnh: true},
+	{id: 'Cesar', name: 'Cesar', image: 'Images/Cesar.png', species: 'Gorilla', acnh: true},
+	{id: 'Hans', name: 'Hans', image: 'Images/Hans.png', species: 'Gorilla', acnh: true},
+	{id: 'Jane', name: 'Jane', image: 'Images/Jane.png', species: 'Gorilla', acnh: false},
+	{id: 'Louie', name: 'Louie', image: 'Images/Louie.png', species: 'Gorilla', acnh: true},
+	{id: 'Peewee', name: 'Peewee', image: 'Images/Peewee.png', species: 'Gorilla', acnh: true},
+	{id: 'Rilla', name: 'Rilla', image: 'Images/Rilla.png', species: 'Gorilla', acnh: true},
+	{id: 'Rocket', name: 'Rocket', image: 'Images/Rocket.png', species: 'Gorilla', acnh: true},
+	{id: 'Violet', name: 'Violet', image: 'Images/Violet.png', species: 'Gorilla', acnh: true},
+	{id: 'Yodel', name: 'Yodel', image: 'Images/Yodel.png', species: 'Gorilla', acnh: false},
+	{id: 'Apple', name: 'Apple', image: 'Images/Apple.png', species: 'Hamster', acnh: true},
+	{id: 'Clay', name: 'Clay', image: 'Images/Clay.png', species: 'Hamster', acnh: true},
+	{id: 'Flurry', name: 'Flurry', image: 'Images/Flurry.png', species: 'Hamster', acnh: true},
+	{id: 'Graham', name: 'Graham', image: 'Images/Graham.png', species: 'Hamster', acnh: true},
+	{id: 'Hamlet', name: 'Hamlet', image: 'Images/Hamlet.png', species: 'Hamster', acnh: true},
+	{id: 'Hamphrey', name: 'Hamphrey', image: 'Images/Hamphrey.png', species: 'Hamster', acnh: true},
+	{id: 'Holden', name: 'Holden', image: 'Images/Holden.png', species: 'Hamster', acnh: false},
+	{id: 'Rodney', name: 'Rodney', image: 'Images/Rodney.png', species: 'Hamster', acnh: true},
+	{id: 'Soleil', name: 'Soleil', image: 'Images/Soleil.png', species: 'Hamster', acnh: true},
+	{id: 'Bertha', name: 'Bertha', image: 'Images/Bertha.png', species: 'Hippo', acnh: true},
+	{id: 'Biff', name: 'Biff', image: 'Images/Biff.png', species: 'Hippo', acnh: true},
+	{id: 'Bitty', name: 'Bitty', image: 'Images/Bitty.png', species: 'Hippo', acnh: true},
+	{id: 'Bubbles', name: 'Bubbles', image: 'Images/Bubbles.png', species: 'Hippo', acnh: true},
+	{id: 'Clara', name: 'Clara', image: 'Images/Clara.png', species: 'Hippo', acnh: false},
+	{id: 'Harry', name: 'Harry', image: 'Images/Harry.png', species: 'Hippo', acnh: true},
+	{id: 'Hippeux', name: 'Hippeux', image: 'Images/Hippeux.png', species: 'Hippo', acnh: true},
+	{id: 'Lulu_Hippo', name: 'Lulu', image: 'Images/LuluHippo.png', species: 'Hippo', acnh: false},
+	{id: 'Rocco', name: 'Rocco', image: 'Images/Rocco.png', species: 'Hippo', acnh: true},
+	{id: 'Rollo', name: 'Rollo', image: 'Images/Rollo.png', species: 'Hippo', acnh: false},
+	{id: 'Annalise', name: 'Annalise', image: 'Images/Annalise.png', species: 'Horse', acnh: true},
+	{id: 'Buck', name: 'Buck', image: 'Images/Buck.png', species: 'Horse', acnh: true},
+	{id: 'Cleo', name: 'Cleo', image: 'Images/Cleo.png', species: 'Horse', acnh: true},
+	{id: 'Clyde', name: 'Clyde', image: 'Images/Clyde.png', species: 'Horse', acnh: true},
+	{id: 'Colton', name: 'Colton', image: 'Images/Colton.png', species: 'Horse', acnh: true},
+	{id: 'Ed', name: 'Ed', image: 'Images/Ed.png', species: 'Horse', acnh: true},
+	{id: 'Elmer', name: 'Elmer', image: 'Images/Elmer.png', species: 'Horse', acnh: true},
+	{id: 'Epona', name: 'Epona', image: 'Images/Epona.png', species: 'Horse', acnh: false},
+	{id: 'Filly', name: 'Filly', image: 'Images/Filly.png', species: 'Horse', acnh: false},
+	{id: 'Julian', name: 'Julian', image: 'Images/Julian.png', species: 'Horse', acnh: true},
+	{id: 'Papi', name: 'Papi', image: 'Images/Papi.png', species: 'Horse', acnh: true},
+	{id: 'Peaches', name: 'Peaches', image: 'Images/Peaches.png', species: 'Horse', acnh: true},
+	{id: 'Reneigh', name: 'Reneigh', image: 'Images/Reneigh.png', species: 'Horse', acnh: true},
+	{id: 'Roscoe', name: 'Roscoe', image: 'Images/Roscoe.png', species: 'Horse', acnh: true},
+	{id: 'Savannah', name: 'Savannah', image: 'Images/Savannah.png', species: 'Horse', acnh: true},
+	{id: 'Victoria', name: 'Victoria', image: 'Images/Victoria.png', species: 'Horse', acnh: true},
+	{id: 'Winnie', name: 'Winnie', image: 'Images/Winnie.png', species: 'Horse', acnh: true},
+	{id: 'Astrid', name: 'Astrid', image: 'Images/Astrid.png', species: 'Kangaroo', acnh: true},
+	{id: 'Carrie', name: 'Carrie', image: 'Images/Carrie.png', species: 'Kangaroo', acnh: true},
+	{id: 'Kitt', name: 'Kitt', image: 'Images/Kitt.png', species: 'Kangaroo', acnh: true},
+	{id: 'Koharu', name: 'Koharu', image: 'Images/Koharu.png', species: 'Kangaroo', acnh: false},
+	{id: 'Marcie', name: 'Marcie', image: 'Images/Marcie.png', species: 'Kangaroo', acnh: true},
+	{id: 'Marcy', name: 'Marcy', image: 'Images/Marcy.png', species: 'Kangaroo', acnh: false},
+	{id: 'Mathilda', name: 'Mathilda', image: 'Images/Mathilda.png', species: 'Kangaroo', acnh: true},
+	{id: 'Rooney', name: 'Rooney', image: 'Images/Rooney.png', species: 'Kangaroo', acnh: true},
+	{id: 'Sylvia', name: 'Sylvia', image: 'Images/Sylvia.png', species: 'Kangaroo', acnh: true},
+	{id: 'Valise', name: 'Valise', image: 'Images/Valise.png', species: 'Kangaroo', acnh: false},
+	{id: 'Walt', name: 'Walt', image: 'Images/Walt.png', species: 'Kangaroo', acnh: true},
+	{id: 'Alice', name: 'Alice', image: 'Images/Alice.png', species: 'Koala', acnh: true},
+	{id: 'Canberra', name: 'Canberra', image: 'Images/Canberra.png', species: 'Koala', acnh: true},
+	{id: 'Eugene', name: 'Eugene', image: 'Images/Eugene.png', species: 'Koala', acnh: true},
+	{id: 'Faith', name: 'Faith', image: 'Images/Faith.png', species: 'Koala', acnh: false},
+	{id: 'Gonzo', name: 'Gonzo', image: 'Images/Gonzo.png', species: 'Koala', acnh: true},
+	{id: 'Huggy', name: 'Huggy', image: 'Images/Huggy.png', species: 'Koala', acnh: false},
+	{id: 'Lyman', name: 'Lyman', image: 'Images/Lyman.png', species: 'Koala', acnh: true},
+	{id: 'Melba', name: 'Melba', image: 'Images/Melba.png', species: 'Koala', acnh: true},
+	{id: 'Ozzie', name: 'Ozzie', image: 'Images/Ozzie.png', species: 'Koala', acnh: true},
+	{id: 'Sydney', name: 'Sydney', image: 'Images/Sydney.png', species: 'Koala', acnh: true},
+	{id: 'Yuka', name: 'Yuka', image: 'Images/Yuka.png', species: 'Koala', acnh: true},
+	{id: 'Aziz', name: 'Aziz', image: 'Images/Aziz.png', species: 'Lion', acnh: false},
+	{id: 'Bud', name: 'Bud', image: 'Images/Bud.png', species: 'Lion', acnh: true},
+	{id: 'Elvis', name: 'Elvis', image: 'Images/Elvis.png', species: 'Lion', acnh: true},
+	{id: 'Jubei', name: 'Jubei', image: 'Images/Jubei.png', species: 'Lion', acnh: false},
+	{id: 'Leopold', name: 'Leopold', image: 'Images/Leopold.png', species: 'Lion', acnh: true},
+	{id: 'Lionel', name: 'Lionel', image: 'Images/Lionel.png', species: 'Lion', acnh: true},
+	{id: 'Mott', name: 'Mott', image: 'Images/Mott.png', species: 'Lion', acnh: true},
+	{id: 'Rex', name: 'Rex', image: 'Images/Rex.png', species: 'Lion', acnh: true},
+	{id: 'Rory', name: 'Rory', image: 'Images/Rory.png', species: 'Lion', acnh: true},
+	{id: 'Champ', name: 'Champ', image: 'Images/Champ.png', species: 'Monkey', acnh: false},
+	{id: 'Deli', name: 'Deli', image: 'Images/Deli.png', species: 'Monkey', acnh: true},
+	{id: 'Elise', name: 'Elise', image: 'Images/Elise.png', species: 'Monkey', acnh: true},
+	{id: 'Flip', name: 'Flip', image: 'Images/Flip.png', species: 'Monkey', acnh: true},
+	{id: 'Monty', name: 'Monty', image: 'Images/Monty.png', species: 'Monkey', acnh: true},
+	{id: 'Nana', name: 'Nana', image: 'Images/Nana.png', species: 'Monkey', acnh: true},
+	{id: 'Shari', name: 'Shari', image: 'Images/Shari.png', species: 'Monkey', acnh: true},
+	{id: 'Simon', name: 'Simon', image: 'Images/Simon.png', species: 'Monkey', acnh: true},
+	{id: 'Tammi', name: 'Tammi', image: 'Images/Tammi.png', species: 'Monkey', acnh: true},
+	{id: 'Anicotti', name: 'Anicotti', image: 'Images/Anicotti.png', species: 'Mouse', acnh: true},
+	{id: 'Bella', name: 'Bella', image: 'Images/Bella.png', species: 'Mouse', acnh: true},
+	{id: 'Bettina', name: 'Bettina', image: 'Images/Bettina.png', species: 'Mouse', acnh: true},
+	{id: 'Bree', name: 'Bree', image: 'Images/Bree.png', species: 'Mouse', acnh: true},
+	{id: 'Broccolo', name: 'Broccolo', image: 'Images/Broccolo.png', species: 'Mouse', acnh: true},
+	{id: 'Candi', name: 'Candi', image: 'Images/Candi.png', species: 'Mouse', acnh: true},
+	{id: 'Carmen_Mouse', name: 'Carmen', image: 'Images/CarmenMouse.png', species: 'Mouse', acnh: false},
+	{id: 'Chadder', name: 'Chadder', image: 'Images/Chadder.png', species: 'Mouse', acnh: true},
+	{id: 'Chico', name: 'Chico', image: 'Images/Chico.png', species: 'Mouse', acnh: false},
+	{id: 'Dora', name: 'Dora', image: 'Images/Dora.png', species: 'Mouse', acnh: true},
+	{id: 'Flossie', name: 'Flossie', image: 'Images/Flossie.png', species: 'Mouse', acnh: false},
+	{id: 'Greta', name: 'Greta', image: 'Images/Greta.png', species: 'Mouse', acnh: true},
+	{id: 'Limberg', name: 'Limberg', image: 'Images/Limberg.png', species: 'Mouse', acnh: true},
+	{id: 'Moose', name: 'Moose', image: 'Images/Moose.png', species: 'Mouse', acnh: true},
+	{id: 'Penelope', name: 'Penelope', image: 'Images/Penelope.png', species: 'Mouse', acnh: true},
+	{id: 'Penny', name: 'Penny', image: 'Images/Penny.png', species: 'Mouse', acnh: false},
+	{id: 'Rizzo', name: 'Rizzo', image: 'Images/Rizzo.png', species: 'Mouse', acnh: true},
+	{id: 'Rod', name: 'Rod', image: 'Images/Rod.png', species: 'Mouse', acnh: true},
+	{id: 'Samson', name: 'Samson', image: 'Images/Samson.png', species: 'Mouse', acnh: true},
+	{id: 'Inkwell', name: 'Inkwell', image: 'Images/Inkwell.png', species: 'Octopus', acnh: false},
+	{id: 'Marina', name: 'Marina', image: 'Images/Marina.png', species: 'Octopus', acnh: true},
+	{id: 'Octavian', name: 'Octavian', image: 'Images/Octavian.png', species: 'Octopus', acnh: true},
+	{id: 'Zucker', name: 'Zucker', image: 'Images/Zucker.png', species: 'Octopus', acnh: true},
+	{id: 'Blanche', name: 'Blanche', image: 'Images/Blanche.png', species: 'Ostrich', acnh: true},
+	{id: 'Cranston', name: 'Cranston', image: 'Images/Cranston.png', species: 'Ostrich', acnh: true},
+	{id: 'Flora', name: 'Flora', image: 'Images/Flora.png', species: 'Ostrich', acnh: true},
+	{id: 'Gladys', name: 'Gladys', image: 'Images/Gladys.png', species: 'Ostrich', acnh: true},
+	{id: 'Julia', name: 'Julia', image: 'Images/Julia.png', species: 'Ostrich', acnh: true},
+	{id: 'Nindori', name: 'Nindori', image: 'Images/Nindori.png', species: 'Ostrich', acnh: false},
+	{id: 'Phil', name: 'Phil', image: 'Images/Phil.png', species: 'Ostrich', acnh: true},
+	{id: 'Phoebe', name: 'Phoebe', image: 'Images/Phoebe.png', species: 'Ostrich', acnh: true},
+	{id: 'Queenie', name: 'Queenie', image: 'Images/Queenie.png', species: 'Ostrich', acnh: true},
+	{id: 'Rio', name: 'Rio', image: 'Images/Rio.png', species: 'Ostrich', acnh: false},
+	{id: 'Sandy', name: 'Sandy', image: 'Images/Sandy.png', species: 'Ostrich', acnh: true},
+	{id: 'Sprocket', name: 'Sprocket', image: 'Images/Sprocket.png', species: 'Ostrich', acnh: true},
+	{id: 'Analog', name: 'Analog', image: 'Images/Analog.png', species: 'Penguin', acnh: false},
+	{id: 'Aurora', name: 'Aurora', image: 'Images/Aurora.png', species: 'Penguin', acnh: true},
+	{id: 'Boomer', name: 'Boomer', image: 'Images/Boomer.png', species: 'Penguin', acnh: true},
+	{id: 'Cube', name: 'Cube', image: 'Images/Cube.png', species: 'Penguin', acnh: true},
+	{id: 'Flo', name: 'Flo', image: 'Images/Flo.png', species: 'Penguin', acnh: true},
+	{id: 'Friga', name: 'Friga', image: 'Images/Friga.png', species: 'Penguin', acnh: true},
+	{id: 'Gwen', name: 'Gwen', image: 'Images/Gwen.png', species: 'Penguin', acnh: true},
+	{id: 'Hopper', name: 'Hopper', image: 'Images/Hopper.png', species: 'Penguin', acnh: true},
+	{id: 'Iggly', name: 'Iggly', image: 'Images/Iggly.png', species: 'Penguin', acnh: true},
+	{id: 'Nobuo', name: 'Nobuo', image: 'Images/Nobuo.png', species: 'Penguin', acnh: false},
+	{id: 'Puck', name: 'Puck', image: 'Images/Puck.png', species: 'Penguin', acnh: true},
+	{id: 'Roald', name: 'Roald', image: 'Images/Roald.png', species: 'Penguin', acnh: true},
+	{id: 'Sprinkle', name: 'Sprinkle', image: 'Images/Sprinkle.png', species: 'Penguin', acnh: true},
+	{id: 'Tex', name: 'Tex', image: 'Images/Tex.png', species: 'Penguin', acnh: true},
+	{id: 'Wade', name: 'Wade', image: 'Images/Wade.png', species: 'Penguin', acnh: true},
+	{id: 'Agnes', name: 'Agnes', image: 'Images/Agnes.png', species: 'Pig', acnh: true},
+	{id: 'Boris', name: 'Boris', image: 'Images/Boris.png', species: 'Pig', acnh: true},
+	{id: 'Chops', name: 'Chops', image: 'Images/Chops.png', species: 'Pig', acnh: true},
+	{id: 'Cobb', name: 'Cobb', image: 'Images/Cobb.png', species: 'Pig', acnh: true},
+	{id: 'Curly', name: 'Curly', image: 'Images/Curly.png', species: 'Pig', acnh: true},
+	{id: 'Gala', name: 'Gala', image: 'Images/Gala.png', species: 'Pig', acnh: true},
+	{id: 'Ganon', name: 'Ganon', image: 'Images/Ganon.png', species: 'Pig', acnh: false},
+	{id: 'Hambo', name: 'Hambo', image: 'Images/Hambo.png', species: 'Pig', acnh: false},
+	{id: 'Hugh', name: 'Hugh', image: 'Images/Hugh.png', species: 'Pig', acnh: true},
+	{id: 'Kevin', name: 'Kevin', image: 'Images/Kevin.png', species: 'Pig', acnh: true},
+	{id: 'Lucy', name: 'Lucy', image: 'Images/Lucy.png', species: 'Pig', acnh: true},
+	{id: 'Maggie', name: 'Maggie', image: 'Images/Maggie.png', species: 'Pig', acnh: true},
+	{id: 'Pancetti', name: 'Pancetti', image: 'Images/Pancetti.png', species: 'Pig', acnh: true},
+	{id: 'Peggy', name: 'Peggy', image: 'Images/Peggy.png', species: 'Pig', acnh: true},
+	{id: 'Pigleg', name: 'Pigleg', image: 'Images/Pigleg.png', species: 'Pig', acnh: false},
+	{id: 'Rasher', name: 'Rasher', image: 'Images/Rasher.png', species: 'Pig', acnh: true},
+	{id: 'Spork', name: 'Spork', image: 'Images/Spork.png', species: 'Pig', acnh: false},
+	{id: 'Sue_E', name: 'Sue_E', image: 'Images/Sue_E.png', species: 'Pig', acnh: false},
+	{id: 'Truffles', name: 'Truffles', image: 'Images/Truffles.png', species: 'Pig', acnh: true},
+	{id: 'Bonbon', name: 'Bonbon', image: 'Images/Bonbon.png', species: 'Rabbit', acnh: true},
+	{id: 'Bunnie', name: 'Bunnie', image: 'Images/Bunnie.png', species: 'Rabbit', acnh: true},
+	{id: 'Carmen', name: 'Carmen', image: 'Images/Carmen.png', species: 'Rabbit', acnh: true},
+	{id: 'Chrissy', name: 'Chrissy', image: 'Images/Chrissy.png', species: 'Rabbit', acnh: true},
+	{id: 'Claude', name: 'Claude', image: 'Images/Claude.png', species: 'Rabbit', acnh: true},
+	{id: 'Coco', name: 'Coco', image: 'Images/Coco.png', species: 'Rabbit', acnh: true},
+	{id: 'Cole', name: 'Cole', image: 'Images/Cole.png', species: 'Rabbit', acnh: true},
+	{id: 'Doc', name: 'Doc', image: 'Images/Doc.png', species: 'Rabbit', acnh: true},
+	{id: 'Dotty', name: 'Dotty', image: 'Images/Dotty.png', species: 'Rabbit', acnh: true},
+	{id: 'Francine', name: 'Francine', image: 'Images/Francine.png', species: 'Rabbit', acnh: true},
+	{id: 'Gabi', name: 'Gabi', image: 'Images/Gabi.png', species: 'Rabbit', acnh: true},
+	{id: 'Gaston', name: 'Gaston', image: 'Images/Gaston.png', species: 'Rabbit', acnh: true},
+	{id: 'Genji', name: 'Genji', image: 'Images/Genji.png', species: 'Rabbit', acnh: true},
+	{id: 'Hopkins', name: 'Hopkins', image: 'Images/Hopkins.png', species: 'Rabbit', acnh: true},
+	{id: 'Mira', name: 'Mira', image: 'Images/Mira.png', species: 'Rabbit', acnh: true},
+	{id: 'OHare', name: 'O\'Hare', image: 'Images/OHare.png', species: 'Rabbit', acnh: true},
+	{id: 'Pippy', name: 'Pippy', image: 'Images/Pippy.png', species: 'Rabbit', acnh: true},
+	{id: 'Ruby', name: 'Ruby', image: 'Images/Ruby.png', species: 'Rabbit', acnh: true},
+	{id: 'Snake', name: 'Snake', image: 'Images/Snake.png', species: 'Rabbit', acnh: true},
+	{id: 'Tiffany', name: 'Tiffany', image: 'Images/Tiffany.png', species: 'Rabbit', acnh: true},
+	{id: 'Toby', name: 'Toby', image: 'Images/Toby.png', species: 'Rabbit', acnh: true},
+	{id: 'Hornsby', name: 'Hornsby', image: 'Images/Hornsby.png', species: 'Rhino', acnh: true},
+	{id: 'Merengue', name: 'Merengue', image: 'Images/Merengue.png', species: 'Rhino', acnh: true},
+	{id: 'Patricia', name: 'Patricia', image: 'Images/Patricia.png', species: 'Rhino', acnh: false},
+	{id: 'Petunia_Rhino', name: 'Petunia', image: 'Images/Petunia_Rhino.png', species: 'Rhino', acnh: false},
+	{id: 'Renee', name: 'Renee', image: 'Images/Renee.png', species: 'Rhino', acnh: true},
+	{id: 'Rhonda', name: 'Rhonda', image: 'Images/Rhonda.png', species: 'Rhino', acnh: true},
+	{id: 'Spike', name: 'Spike', image: 'Images/Spike.png', species: 'Rhino', acnh: true},
+	{id: 'Tank', name: 'Tank', image: 'Images/Tank.png', species: 'Rhino', acnh: true},
+	{id: 'Tiara', name: 'Tiara', image: 'Images/Tiara.png', species: 'Rhino', acnh: false},
+	{id: 'Baabara', name: 'Baabara', image: 'Images/Baabara.png', species: 'Sheep', acnh: true},
+	{id: 'Cashmere', name: 'Cashmere', image: 'Images/Cashmere.png', species: 'Sheep', acnh: true},
+	{id: 'Curlos', name: 'Curlos', image: 'Images/Curlos.png', species: 'Sheep', acnh: true},
+	{id: 'Dom', name: 'Dom', image: 'Images/Dom.png', species: 'Sheep', acnh: true},
+	{id: 'Etoile', name: 'Etoile', image: 'Images/Etoile.png', species: 'Sheep', acnh: true},
+	{id: 'Eunice', name: 'Eunice', image: 'Images/Eunice.png', species: 'Sheep', acnh: true},
+	{id: 'Frita', name: 'Frita', image: 'Images/Frita.png', species: 'Sheep', acnh: true},
+	{id: 'Gen', name: 'Gen', image: 'Images/Gen.png', species: 'Sheep', acnh: false},
+	{id: 'Muffy', name: 'Muffy', image: 'Images/Muffy.png', species: 'Sheep', acnh: true},
+	{id: 'Pietro', name: 'Pietro', image: 'Images/Pietro.png', species: 'Sheep', acnh: true},
+	{id: 'Stella', name: 'Stella', image: 'Images/Stella.png', species: 'Sheep', acnh: true},
+	{id: 'Timbra', name: 'Timbra', image: 'Images/Timbra.png', species: 'Sheep', acnh: true},
+	{id: 'Vesta', name: 'Vesta', image: 'Images/Vesta.png', species: 'Sheep', acnh: true},
+	{id: 'Wendy', name: 'Wendy', image: 'Images/Wendy.png', species: 'Sheep', acnh: true},
+	{id: 'Willow', name: 'Willow', image: 'Images/Willow.png', species: 'Sheep', acnh: true},
+	{id: 'Woolio', name: 'Woolio', image: 'Images/Woolio.png', species: 'Sheep', acnh: false},
+	{id: 'AgentS', name: 'AgentS', image: 'Images/AgentS.png', species: 'Squirrel', acnh: true},
+	{id: 'Blaire', name: 'Blaire', image: 'Images/Blaire.png', species: 'Squirrel', acnh: true},
+	{id: 'Cally', name: 'Cally', image: 'Images/Cally.png', species: 'Squirrel', acnh: true},
+	{id: 'Caroline', name: 'Caroline', image: 'Images/Caroline.png', species: 'Squirrel', acnh: true},
+	{id: 'Cece', name: 'Cece', image: 'Images/Cece.png', species: 'Squirrel', acnh: false},
+	{id: 'Filbert', name: 'Filbert', image: 'Images/Filbert.png', species: 'Squirrel', acnh: true},
+	{id: 'Hazel', name: 'Hazel', image: 'Images/Hazel.png', species: 'Squirrel', acnh: true},
+	{id: 'Kit', name: 'Kit', image: 'Images/Kit.png', species: 'Squirrel', acnh: false},
+	{id: 'Marshal', name: 'Marshal', image: 'Images/Marshal.png', species: 'Squirrel', acnh: true},
+	{id: 'Mint', name: 'Mint', image: 'Images/Mint.png', species: 'Squirrel', acnh: true},
+	{id: 'Nibbles', name: 'Nibbles', image: 'Images/Nibbles.png', species: 'Squirrel', acnh: true},
+	{id: 'Peanut', name: 'Peanut', image: 'Images/Peanut.png', species: 'Squirrel', acnh: true},
+	{id: 'Pecan', name: 'Pecan', image: 'Images/Pecan.png', species: 'Squirrel', acnh: true},
+	{id: 'Poppy', name: 'Poppy', image: 'Images/Poppy.png', species: 'Squirrel', acnh: true},
+	{id: 'Ricky', name: 'Ricky', image: 'Images/Ricky.png', species: 'Squirrel', acnh: true},
+	{id: 'Sally', name: 'Sally', image: 'Images/Sally.png', species: 'Squirrel', acnh: true},
+	{id: 'Sheldon', name: 'Sheldon', image: 'Images/Sheldon.png', species: 'Squirrel', acnh: true},
+	{id: 'Static', name: 'Static', image: 'Images/Static.png', species: 'Squirrel', acnh: true},
+	{id: 'Sylvana', name: 'Sylvana', image: 'Images/Sylvana.png', species: 'Squirrel', acnh: true},
+	{id: 'Tasha', name: 'Tasha', image: 'Images/Tasha.png', species: 'Squirrel', acnh: true},
+	{id: 'Viche', name: 'Viche', image: 'Images/Viche.png', species: 'Squirrel', acnh: false},
+	{id: 'Bangle', name: 'Bangle', image: 'Images/Bangle.png', species: 'Tiger', acnh: true},
+	{id: 'Bianca', name: 'Bianca', image: 'Images/Bianca.png', species: 'Tiger', acnh: true},
+	{id: 'Claudia', name: 'Claudia', image: 'Images/Claudia.png', species: 'Tiger', acnh: true},
+	{id: 'Leonardo', name: 'Leonardo', image: 'Images/Leonardo.png', species: 'Tiger', acnh: true},
+	{id: 'Rolf', name: 'Rolf', image: 'Images/Rolf.png', species: 'Tiger', acnh: true},
+	{id: 'Rowan', name: 'Rowan', image: 'Images/Rowan.png', species: 'Tiger', acnh: true},
+	{id: 'Tybalt', name: 'Tybalt', image: 'Images/Tybalt.png', species: 'Tiger', acnh: true},
+	{id: 'Audie', name: 'Audie', image: 'Images/Audie.png', species: 'Wolf', acnh: true},
+	{id: 'Chief', name: 'Chief', image: 'Images/Chief.png', species: 'Wolf', acnh: true},
+	{id: 'Dobie', name: 'Dobie', image: 'Images/Dobie.png', species: 'Wolf', acnh: true},
+	{id: 'Fang', name: 'Fang', image: 'Images/Fang.png', species: 'Wolf', acnh: true},
+	{id: 'Freya', name: 'Freya', image: 'Images/Freya.png', species: 'Wolf', acnh: true},
+	{id: 'Kyle', name: 'Kyle', image: 'Images/Kyle.png', species: 'Wolf', acnh: true},
+	{id: 'Lobo', name: 'Lobo', image: 'Images/Lobo.png', species: 'Wolf', acnh: true},
+	{id: 'Skye', name: 'Skye', image: 'Images/Skye.png', species: 'Wolf', acnh: true},
+	{id: 'Tarou', name: 'Tarou', image: 'Images/Tarou.png', species: 'Wolf', acnh: false},
+	{id: 'Vivian', name: 'Vivian', image: 'Images/Vivian.png', species: 'Wolf', acnh: true},
+	{id: 'W_Link', name: 'W_Link', image: 'Images/W_Link.png', species: 'Wolf', acnh: false},
+	{id: 'Whitney', name: 'Whitney', image: 'Images/Whitney.png', species: 'Wolf', acnh: true},
+	{id: 'Wolfgang', name: 'Wolfgang', image: 'Images/Wolfgang.png', species: 'Wolf', acnh: true}
+];
+
+var myACPicker = new picker.Picker({
+    items: items,
+	localStorageKey: 'AC-picker-state',
+	defaultSettings: {
+		species: ['Alligator', 'Anteater', 'Bear', 'Bird', 'Bull', 'Cat', 'Chicken', 'Cow', 'Cub', 'Deer', 'Dog', 'Duck', 'Eagle', 'Elephant', 'Frog', 'Goat', 'Gorilla', 'Hamster', 'Hippo', 'Horse', 'Kangaroo', 'Koala', 'Lion', 'Monkey', 'Mouse', 'Octopus', 'Ostrich', 'Penguin', 'Pig', 'Rabbit', 'Rhino', 'Sheep', 'Squirrel', 'Tiger', 'Wolf'],
+		acnhOnly: false
+	},
+	shouldIncludeItem: function(item, settings) {
+		return settings.species.indexOf(item.species) !== -1 && (!settings.acnhOnly || item.acnh);
+	}
+});
+
+var pickerUI = new PickerUI(myACPicker, {
+    elements: {
+        pick: "#pick",
+        pass: "#pass",
+        undo: "#undo",
+        redo: "#redo",
+		reset: ".reset",
+        evaluating: "#evaluating",
+        favorites: "#favorites",
+		settings: {
+			species: '.species',
+			acnhOnly: '#acnh'
+		}
+    }
+});
+
+pickerUI.initialize();
+
+$(".tabs").each(function() {
+    var $tabs = $(this);
+    $tabs.find("a:not(#expand-favorites a)").on('click', function() {
+        $($tabs.children(".active").removeClass("active").children("a").attr("href")).hide();
+        $(this).parent().addClass("active");
+        $($(this).attr("href")).show();
+        return false;
+    }).each(function () {
+        $($(this).attr("href")).hide();
+    }).first().click();
+});
+
+/* Sortable favorites - you can safely remove this, and the Sortable.min.js script, if you don't want to be able to sort your favorite list. */
+var sortable = new Sortable(pickerUI.elem.favorites.get(0), {
+    draggable: '.item',
+    animation: 100,
+    onStart: function() {
+        pickerUI.elem.favorites.addClass("sorting");
+    },
+    onEnd: function() {
+        pickerUI.elem.favorites.removeClass("sorting");
+    },
+    onUpdate: function() {
+        myACPicker.setFavorites(pickerUI.elem.favorites.children().map(function() {
+            return pickerUI.getItem(this);
+        }).get());
+        pickerUI.update(true);
+    }
+});
+/* End sortable favorites */
+</script>
+</body>
+</html>
