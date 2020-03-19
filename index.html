@@ -851,11 +851,13 @@ var items = [
 	{id: 'Wolfgang', name: 'Wolfgang', image: 'Images/Wolfgang.png', species: 'Wolf', acnh: true}
 ];
 
+var species = ['Alligator', 'Anteater', 'Bear', 'Bird', 'Bull', 'Cat', 'Chicken', 'Cow', 'Cub', 'Deer', 'Dog', 'Duck', 'Eagle', 'Elephant', 'Frog', 'Goat', 'Gorilla', 'Hamster', 'Hippo', 'Horse', 'Kangaroo', 'Koala', 'Lion', 'Monkey', 'Mouse', 'Octopus', 'Ostrich', 'Penguin', 'Pig', 'Rabbit', 'Rhino', 'Sheep', 'Squirrel', 'Tiger', 'Wolf'];	
+	
 var myACPicker = new picker.Picker({
     items: items,
 	localStorageKey: 'AC-picker-state',
 	defaultSettings: {
-		species: ['Alligator', 'Anteater', 'Bear', 'Bird', 'Bull', 'Cat', 'Chicken', 'Cow', 'Cub', 'Deer', 'Dog', 'Duck', 'Eagle', 'Elephant', 'Frog', 'Goat', 'Gorilla', 'Hamster', 'Hippo', 'Horse', 'Kangaroo', 'Koala', 'Lion', 'Monkey', 'Mouse', 'Octopus', 'Ostrich', 'Penguin', 'Pig', 'Rabbit', 'Rhino', 'Sheep', 'Squirrel', 'Tiger', 'Wolf'],
+		species: species,
 		acnhOnly: false
 	},
 	shouldIncludeItem: function(item, settings) {
@@ -891,6 +893,32 @@ $(".tabs").each(function() {
     }).each(function () {
         $($(this).attr("href")).hide();
     }).first().click();
+});
+	
+pickerUI.elem.settings.species.on('change', function() {
+    var species = pickerUI.getSetting('species');
+    if (species.length === species.length) {
+        $("#species-all").prop("checked", true);
+    } else if (species.length === 0) {
+        $("#species-all").prop("checked", false);
+    }
+});
+
+$("#species-all").on('change', function() {
+	if(this.checked) {
+		$('.species').each(function() {
+			this.checked = true;
+		});
+	}
+	else {
+		$('.species').each(function() {
+			this.checked = false;
+		});
+	}
+	
+	pickerUI.setSetting('species', $(this).prop("checked") ? species : []);
+    myACPicker.setSettings(pickerUI.getSettings());
+    pickerUI.update(true, 'setting');
 });
 
 /* Sortable favorites - you can safely remove this, and the Sortable.min.js script, if you don't want to be able to sort your favorite list. */
