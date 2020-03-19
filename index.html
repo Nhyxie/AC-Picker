@@ -917,7 +917,7 @@ $("#species-all").on('change', function() {
 		});
 	}
 	
-	pickerUI.setSetting('species', $(this).prop("checked") ? species : []);
+    pickerUI.setSetting('species', $(this).prop("checked") ? species : []);
     myACPicker.setSettings(pickerUI.getSettings());
     pickerUI.update(true, 'setting');
 });
