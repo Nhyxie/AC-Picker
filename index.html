@@ -898,10 +898,10 @@ $(".tabs").each(function() {
 	
 pickerUI.elem.settings.species.on('change', function() {
     var species = pickerUI.getSetting('species');
-    if (species.length === species.length) {
-        $("#species-all").prop("checked", true);
-    } else if (species.length === 0) {
+    if (species.length === 0) {
         $("#species-all").prop("checked", false);
+    } else {
+        $("#species-all").prop("checked", true);
     }
 });
 
